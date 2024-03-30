@@ -1,78 +1,98 @@
-const postsContainer = document.getElementById("posts-container");
-const loading = document.querySelector(".loader");
+const posts = document.getElementById("posts");
+const loading = document.querySelector(".loading");
 const filter = document.getElementById("filter");
 
-let limit = 5;
 let page = 1;
+let limit = 5;
 
-// Fetch posts from API
-async function getPosts() {
-  const res = await fetch(
-    `https://jsonplaceholder.typicode.com/posts?_limit=${limit}&_page=${page}`
+let pageInit = false;
+
+const getPosts = async () => {
+  const result = await fetch(
+    `https://jsonplaceholder.typicode.com/posts?_page=${page}&_limit=${limit}`
   );
 
-  const data = await res.json();
+  return result.json();
+};
 
-  return data;
-}
+const showPosts = async () => {
+  const getAllPosts = await getPosts();
 
-// Show posts in DOM
-async function showPosts() {
-  const posts = await getPosts();
+  getAllPosts.forEach((post) => {
+    const element = document.createElement("div");
+    element.classList.add("post");
 
-  posts.forEach((post) => {
-    const postEl = document.createElement("div");
-    postEl.classList.add("post");
-    postEl.innerHTML = `
-      <div class="number">${post.id}</div>
-      <div class="post-info">
-        <h2 class="post-title">${post.title}</h2>
-        <p class="post-body">${post.body}</p>
-      </div>
-    `;
+    element.innerHTML = `
+        <div class="number">${post.id}</div>
+        <div class="post-info">
+          <div class="post-title">${post.title}</div>
+          <div class="post-body">${post.body}</div>
+        </div>
+        `;
 
-    postsContainer.appendChild(postEl);
+    posts.appendChild(element);
   });
-}
+};
 
-// Show loader & fetch more posts
-function showLoading() {
+const showLoading = () => {
+  if (!pageInit) return;
   loading.classList.add("show");
 
   setTimeout(() => {
     loading.classList.remove("show");
 
-    setTimeout(() => {
-      page++;
-      showPosts();
-    }, 300);
+    page++;
+    showPosts();
   }, 1000);
-}
+};
 
-// Filter posts by input
-function filterPosts(e) {
-  const term = e.target.value.toUpperCase();
+const searchedPhrase = (section, phrase, term, post) => {
+  const splittedPhrase = phrase.split(" ");
+  const keyword = splittedPhrase.find((word) => word.toUpperCase() === term);
+  const index = splittedPhrase.indexOf(keyword);
+  splittedPhrase[
+    index
+  ] = `<span style='background-color: red; color: white; padding-left: 3px; padding-right:3px'>${keyword}</span>`;
+  console.log(splittedPhrase);
+  section === "title"
+    ? (post.querySelector(".post-title").innerHTML = splittedPhrase.join(" "))
+    : (post.querySelector(".post-body").innerHTML = splittedPhrase.join(" "));
+};
+
+const filterPosts = (event) => {
+  const term = event.target.value.toUpperCase();
   const posts = document.querySelectorAll(".post");
 
   posts.forEach((post) => {
-    const title = post.querySelector(".post-title").innerText.toUpperCase();
-    const body = post.querySelector(".post-body").innerText.toUpperCase();
+    const title = post.querySelector(".post-title").innerText;
+    const body = post.querySelector(".post-body").innerText;
 
-    if (title.indexOf(term) > -1 || body.indexOf(term) > -1) {
-      post.style.display = "flex";
-    } else {
-      post.style.display = "none";
-    }
+    if (
+      title.toUpperCase().indexOf(term) > -1 ||
+      body.toUpperCase().indexOf(term) > -1
+    ) {
+      post.style.display = "block";
+      searchedPhrase("title", title, term, post);
+      searchedPhrase("body", body, term, post);
+    } else post.style.display = "none";
   });
-}
 
-// Show initial posts
-showPosts();
+  pageInit = false;
+};
+
+filter.addEventListener("input", filterPosts);
 
 window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+  if (
+    Math.abs(
+      document.documentElement.scrollHeight -
+        document.documentElement.scrollTop -
+        document.documentElement.clientHeight
+    ) < 1
+  ) {
     showLoading();
+    pageInit = true;
   }
 });
 
-filter.addEventListener("input", filterPosts);
+showPosts();
