@@ -53,7 +53,6 @@ const searchedPhrase = (section, phrase, term, post) => {
   splittedPhrase[
     index
   ] = `<span style='background-color: red; color: white; padding-left: 3px; padding-right:3px'>${keyword}</span>`;
-  console.log(splittedPhrase);
   section === "title"
     ? (post.querySelector(".post-title").innerHTML = splittedPhrase.join(" "))
     : (post.querySelector(".post-body").innerHTML = splittedPhrase.join(" "));
